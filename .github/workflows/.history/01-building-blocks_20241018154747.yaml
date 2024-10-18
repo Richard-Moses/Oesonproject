@@ -1,0 +1,13 @@
+name: 01-Building Blocks
+
+on:push
+
+jobs:
+  echo-hello:
+    runs-on:ubuntu-latest
+    steps:
+      -name:Failed to execute
+       run:|
+        echo "i will not execute"
+        exit 1
+      -name:say goodby!Equals 
