@@ -19,6 +19,7 @@ Agroo-Memory Card is a single-page, offline memory-matching (concentration) game
 - Board sizes are driven by the `SIZES` map (`3x4`/`4x4`/`4x5` → `{cols, pairs}`); the emoji deck comes from the `PRODUCE` array sliced to the pair count for the chosen size.
 - Theming is CSS custom properties on `:root`, redefined for dark mode via both `prefers-color-scheme` and an explicit `[data-theme="dark"]` override — keep both in sync when changing colors.
 - There's no test suite, linter, or build tool for this file. To check a change, open `index.html` directly in a browser (or serve the folder statically) and click through a game.
+- `manifest.webmanifest`, `icon-192.png`, `icon-512.png`, and `apple-touch-icon.png` (repo root, alongside `index.html`) make the live web version installable ("Add to Home Screen" on mobile). All three icon PNGs are resized copies of `play-store-assets/play-store-icon-512.png` — regenerate them from that source if the app icon ever changes, rather than hand-editing the PNGs. `app-icon.ico` is a separate PNG-in-ICO wrapper of the same artwork, used only for the desktop shortcut (see Deployment below), not referenced by `index.html`.
 
 ## Android/Play Store notes (from `PLAY_STORE_GUIDE.md` in the zip)
 
@@ -28,5 +29,6 @@ Agroo-Memory Card is a single-page, offline memory-matching (concentration) game
 
 ## Deployment
 
-- **Web (live):** https://agroo-memory-card.netlify.app — a Netlify site deployed manually from this folder via `netlify deploy --dir=<folder with index.html> --prod --site-name agroo-memory-card`. It is **not** wired to auto-deploy from git; after editing `index.html`, redeploy manually or set up a Netlify build hook if that's wanted.
+- **Web (live):** https://agroo-memory-card.netlify.app — a Netlify site deployed manually via `netlify deploy --dir=<folder> --prod --site agroo-memory-card`. The deploy folder must contain `index.html`, `manifest.webmanifest`, `icon-192.png`, and `icon-512.png` together (not just `index.html`), or the installable-icon setup breaks on the live site even though it still works locally. It is **not** wired to auto-deploy from git; after editing any of those files, redeploy manually or set up a Netlify build hook if that's wanted.
+- **Desktop shortcut:** `Agroo-Memory Card.url` on the Windows Desktop (repo root, one level up from this folder) points at the live Netlify URL and uses `app-icon.ico` for its icon. It's a personal, machine-specific launcher — intentionally left untracked in git, same as the pre-existing `THEMELOCK.COM.url` shortcut already there.
 - **Repo:** this folder lives inside the `Oesonproject` monorepo (pushed to `origin` — see the repo's own notes on remotes before pushing; `main` has previously diverged from `origin/main` and needed a merge).
