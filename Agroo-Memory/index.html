@@ -1,0 +1,776 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Agroo-Memory Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Karla:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F3E8;
+    --bg-2: #EFE8D6;
+    --ink: #17150F;
+    --ink-soft: #5B5648;
+    --surface: #FFFFFF;
+    --surface-line: #E3DCC8;
+    --plate: #15130F;
+    --plate-2: #050403;
+    --red: #CE1126;
+    --red-ink: #FFFFFF;
+    --gold: #FCD116;
+    --gold-ink: #17150F;
+    --green: #006B3F;
+    --green-ink: #FFFFFF;
+    --black-star: #0C0B09;
+    --shadow: 0 1px 0 rgba(0,0,0,0.08);
+    --focus-ring: #17150F;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121110;
+      --bg-2: #18160F;
+      --ink: #F3EEDD;
+      --ink-soft: #B9B29C;
+      --surface: #201D17;
+      --surface-line: #3A362A;
+      --plate: #221F19;
+      --plate-2: #0E0C09;
+      --red: #E2394D;
+      --red-ink: #FFFFFF;
+      --gold: #FCD116;
+      --gold-ink: #17150F;
+      --green: #189A5D;
+      --green-ink: #06170F;
+      --black-star: #050403;
+      --shadow: 0 1px 0 rgba(0,0,0,0.4);
+      --focus-ring: #FCD116;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #121110;
+    --bg-2: #18160F;
+    --ink: #F3EEDD;
+    --ink-soft: #B9B29C;
+    --surface: #201D17;
+    --surface-line: #3A362A;
+    --plate: #221F19;
+    --plate-2: #0E0C09;
+    --red: #E2394D;
+    --red-ink: #FFFFFF;
+    --gold: #FCD116;
+    --gold-ink: #17150F;
+    --green: #189A5D;
+    --green-ink: #06170F;
+    --black-star: #050403;
+    --shadow: 0 1px 0 rgba(0,0,0,0.4);
+    --focus-ring: #FCD116;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  body {
+    min-height: 100vh;
+    font-family: "Karla", ui-sans-serif, system-ui, sans-serif;
+    background: var(--bg);
+    display: flex;
+    justify-content: center;
+    padding: clamp(12px, 3vw, 32px);
+  }
+
+  .stage {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 2.4vw, 20px);
+  }
+
+  /* ---- Star shape, reused for badges and confetti ---- */
+  .star-shape {
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+
+  /* ---- Header / signboard ---- */
+  header.sign {
+    background: linear-gradient(180deg, var(--plate), var(--plate-2));
+    border-radius: 14px;
+    padding: clamp(14px, 3vw, 22px) clamp(16px, 4vw, 28px);
+    box-shadow: 0 6px 0 rgba(0,0,0,0.25), 0 10px 24px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(252,209,22,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+  .sign-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: clamp(10px, 3vw, 16px);
+  }
+
+  .mini-flag {
+    flex: none;
+    width: clamp(38px, 10vw, 50px);
+    height: clamp(26px, 7vw, 34px);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 0 1px rgba(252,209,22,0.5), 0 2px 6px rgba(0,0,0,0.35);
+  }
+  .mini-flag .band { flex: 1; }
+  .mini-flag .band.red { background: var(--red); }
+  .mini-flag .band.green { background: var(--green); }
+  .mini-flag .band.gold {
+    background: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mini-flag .band.gold .star-shape {
+    width: 42%;
+    height: 60%;
+    background: var(--black-star);
+  }
+
+  .brand-text { min-width: 0; }
+  h1 {
+    font-family: "Alfa Slab One", ui-serif, serif;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: var(--gold);
+    text-shadow: 0 2px 0 rgba(0,0,0,0.45);
+    margin: 0;
+    font-size: clamp(1.6rem, 6vw, 2.4rem);
+    text-wrap: balance;
+  }
+  .tagline {
+    margin: 0;
+    color: #EDE6D3;
+    font-style: italic;
+    font-size: clamp(0.75rem, 2.4vw, 0.95rem);
+  }
+
+  /* ---- Controls row ---- */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .difficulty {
+    display: inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--surface-line);
+    border-radius: 999px;
+    padding: 4px;
+    gap: 2px;
+  }
+  .difficulty button {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: "Karla", sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    min-height: 34px;
+  }
+  .difficulty button[aria-pressed="true"] {
+    background: var(--green);
+    color: var(--green-ink);
+  }
+  .difficulty button:focus-visible,
+  button:focus-visible,
+  .card:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .new-game {
+    border: none;
+    background: var(--red);
+    color: var(--red-ink);
+    font-family: "Karla", sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 10px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    min-height: 40px;
+  }
+  .new-game:active { transform: translateY(1px); }
+
+  /* ---- Stat bar ---- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(8px, 2vw, 12px);
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--surface-line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .stat .n {
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(1.1rem, 4vw, 1.4rem);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .stat .l {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* ---- Board ---- */
+  .board {
+    display: grid;
+    gap: clamp(6px, 1.6vw, 12px);
+    perspective: 900px;
+  }
+  .board[data-cols="3"] { grid-template-columns: repeat(3, 1fr); }
+  .board[data-cols="4"] { grid-template-columns: repeat(4, 1fr); }
+  .board[data-cols="5"] { grid-template-columns: repeat(5, 1fr); }
+
+  .card {
+    aspect-ratio: 3 / 4;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    transform-style: preserve-3d;
+    transition: transform 0.45s cubic-bezier(.4,.2,.2,1);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.18), 0 5px 10px rgba(0,0,0,0.15);
+  }
+  .card.flipped .card-inner,
+  .card.matched .card-inner {
+    transform: rotateY(180deg);
+  }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    backface-visibility: hidden;
+  }
+  .card-back {
+    background: linear-gradient(160deg, var(--plate), var(--plate-2));
+    border: 2px solid var(--gold);
+  }
+  .card-back .star-wrap {
+    position: relative;
+    width: 40%;
+    height: 40%;
+  }
+  .card-back .star-outline,
+  .card-back .star-fill {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+  }
+  .card-back .star-outline {
+    width: 100%;
+    height: 100%;
+    background: var(--gold);
+  }
+  .card-back .star-fill {
+    width: 78%;
+    height: 78%;
+    background: var(--black-star);
+  }
+  .card-front {
+    background: var(--surface);
+    border: 1px solid var(--surface-line);
+    transform: rotateY(180deg);
+    font-size: clamp(1.6rem, 8vw, 2.6rem);
+  }
+  .card.matched .card-front {
+    background: color-mix(in srgb, var(--green) 16%, var(--surface));
+    border-color: var(--green);
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold) 55%, transparent);
+  }
+  .card:not(.flipped):not(.matched):hover .card-inner {
+    transform: translateY(-2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-inner { transition: none; }
+    .card:not(.flipped):not(.matched):hover .card-inner { transform: none; }
+  }
+
+  /* ---- Win overlay ---- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,4,3,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+    overflow: hidden;
+  }
+  .overlay.show { display: flex; }
+  .win-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: clamp(20px, 5vw, 32px);
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 3px var(--gold);
+    position: relative;
+    z-index: 1;
+  }
+  .win-card h2 {
+    font-family: "Alfa Slab One", serif;
+    font-weight: 400;
+    color: var(--red);
+    margin: 0 0 6px;
+    font-size: clamp(1.4rem, 6vw, 1.8rem);
+  }
+  .win-card p { margin: 0 0 16px; color: var(--ink-soft); }
+  .win-stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 18px;
+  }
+  .win-stats div { text-align: center; }
+  .win-stats .n { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .win-stats .l { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+
+  .confetti-piece {
+    position: absolute;
+    top: -20px;
+    width: 10px;
+    height: 10px;
+    opacity: 0.95;
+    animation: confetti-fall linear forwards;
+  }
+  @keyframes confetti-fall {
+    to { transform: translateY(115vh) rotate(var(--spin, 360deg)); }
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    padding-bottom: 4px;
+  }
+
+  .credit {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    padding-bottom: 8px;
+  }
+  .credit strong {
+    color: var(--gold);
+    font-weight: 700;
+  }
+</style>
+
+<div class="stage">
+  <header class="sign">
+    <div class="sign-inner">
+      <div class="mini-flag" aria-hidden="true">
+        <div class="band red"></div>
+        <div class="band gold"><div class="star-shape"></div></div>
+        <div class="band green"></div>
+      </div>
+      <div class="brand-text">
+        <h1>Agroo-Memory Card</h1>
+        <p class="tagline">a Black Star&ndash;inspired memory match</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="difficulty" role="group" aria-label="Board size">
+      <button type="button" data-size="3x4" aria-pressed="false">Small</button>
+      <button type="button" data-size="4x4" aria-pressed="true">Classic</button>
+      <button type="button" data-size="4x5" aria-pressed="false">Big</button>
+    </div>
+    <button class="new-game" type="button" id="newGameBtn">New Crate</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n" id="statMoves">0</div><div class="l">Moves</div></div>
+    <div class="stat"><div class="n" id="statTime">0:00</div><div class="l">Time</div></div>
+    <div class="stat"><div class="n" id="statPairs">0/0</div><div class="l">Pairs</div></div>
+  </div>
+
+  <div class="board" id="board" data-cols="4" role="group" aria-label="Memory card grid"></div>
+
+  <footer>Tap two cards to find matching produce. Match every pair to fill the crate.</footer>
+  <p class="credit">Powered by: <strong>Richard Moses</strong></p>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="win-card">
+    <h2 id="winTitle">Crate's full!</h2>
+    <p>Every pair picked fresh.</p>
+    <div class="win-stats">
+      <div><div class="n" id="finalMoves">0</div><div class="l">Moves</div></div>
+      <div><div class="n" id="finalTime">0:00</div><div class="l">Time</div></div>
+    </div>
+    <button class="new-game" type="button" id="playAgainBtn">Pick Again</button>
+  </div>
+</div>
+
+<div class="sr-only" aria-live="polite" id="liveRegion"></div>
+
+<script>
+(function () {
+  var PRODUCE = ["🍅", "🥕", "🌽", "🍆", "🥔", "🫑", "🍓", "🥑", "🍇", "🍋"];
+  var SIZES = {
+    "3x4": { cols: 3, pairs: 6 },
+    "4x4": { cols: 4, pairs: 8 },
+    "4x5": { cols: 4, pairs: 10 }
+  };
+  var CONFETTI_COLORS = ["#CE1126", "#FCD116", "#006B3F", "#0C0B09"];
+
+  /* ---- Applause sound, synthesized so no audio file needs hosting ---- */
+  var audioCtx = null;
+  function ensureAudio() {
+    if (audioCtx) return audioCtx;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    } catch (e) { audioCtx = null; }
+    return audioCtx;
+  }
+  function unlockAudio() {
+    var ctx = ensureAudio();
+    if (ctx && ctx.state === "suspended") {
+      ctx.resume().catch(function () {});
+    }
+  }
+  // One handclap: a short filtered noise burst.
+  function playClap(ctx, dest, time) {
+    var dur = 0.06;
+    var bufferSize = Math.max(1, Math.round(ctx.sampleRate * dur));
+    var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+    var noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    var bandpass = ctx.createBiquadFilter();
+    bandpass.type = "bandpass";
+    bandpass.frequency.value = 1000 + Math.random() * 2800;
+    bandpass.Q.value = 0.5 + Math.random() * 0.9;
+
+    var gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(0.85 + Math.random() * 0.15, time + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0005, time + 0.05 + Math.random() * 0.04);
+
+    noise.connect(bandpass);
+    bandpass.connect(gain);
+    gain.connect(dest);
+    noise.start(time);
+    noise.stop(time + dur + 0.02);
+  }
+  // A burst of overlapping claps = applause. `big` gives a longer, fuller round.
+  function playApplause(big) {
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    unlockAudio();
+    var now = ctx.currentTime;
+    var duration = big ? 1.1 : 0.6;
+    var clapCount = big ? 46 : 22;
+
+    var master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.linearRampToValueAtTime(1, now + 0.04);
+    master.gain.linearRampToValueAtTime(0.9, now + duration * 0.6);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    master.connect(ctx.destination);
+
+    for (var i = 0; i < clapCount; i++) {
+      playClap(ctx, master, now + Math.random() * duration * 0.85);
+    }
+  }
+
+  var board = document.getElementById("board");
+  var statMoves = document.getElementById("statMoves");
+  var statTime = document.getElementById("statTime");
+  var statPairs = document.getElementById("statPairs");
+  var overlay = document.getElementById("overlay");
+  var finalMoves = document.getElementById("finalMoves");
+  var finalTime = document.getElementById("finalTime");
+  var liveRegion = document.getElementById("liveRegion");
+  var difficultyBtns = Array.prototype.slice.call(document.querySelectorAll(".difficulty button"));
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var currentSize = "4x4";
+  var state = {
+    cards: [],
+    flipped: [],
+    matched: 0,
+    moves: 0,
+    resolvingMatch: false,
+    mismatchTimer: null,
+    timer: null,
+    seconds: 0,
+    started: false
+  };
+
+  function resetMismatchedPair() {
+    var a = state.flipped[0], b = state.flipped[1];
+    if (!a || !b) { state.flipped = []; return; }
+    a.el.classList.remove("flipped");
+    b.el.classList.remove("flipped");
+    a.el.setAttribute("aria-label", "Face-down card");
+    b.el.setAttribute("aria-label", "Face-down card");
+    state.flipped = [];
+  }
+
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function formatTime(s) {
+    var m = Math.floor(s / 60);
+    var sec = s % 60;
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
+  }
+
+  function stopTimer() {
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function startTimer() {
+    stopTimer();
+    state.timer = setInterval(function () {
+      state.seconds++;
+      statTime.textContent = formatTime(state.seconds);
+    }, 1000);
+  }
+
+  function buildBoard(sizeKey) {
+    stopTimer();
+    currentSize = sizeKey;
+    var cfg = SIZES[sizeKey];
+    var icons = PRODUCE.slice(0, cfg.pairs);
+    var deck = shuffle(icons.concat(icons).map(function (icon, i) {
+      return { id: i, icon: icon };
+    }));
+
+    if (state.mismatchTimer) { clearTimeout(state.mismatchTimer); state.mismatchTimer = null; }
+    state.cards = deck;
+    state.flipped = [];
+    state.matched = 0;
+    state.moves = 0;
+    state.resolvingMatch = false;
+    state.seconds = 0;
+    state.started = false;
+
+    board.setAttribute("data-cols", cfg.cols);
+    board.innerHTML = "";
+    overlay.classList.remove("show");
+    clearConfetti();
+
+    deck.forEach(function (item, index) {
+      var btn = document.createElement("button");
+      btn.className = "card";
+      btn.type = "button";
+      btn.setAttribute("data-index", index);
+      btn.setAttribute("aria-label", "Face-down card");
+
+      var inner = document.createElement("div");
+      inner.className = "card-inner";
+
+      var back = document.createElement("div");
+      back.className = "card-face card-back";
+      var starWrap = document.createElement("div");
+      starWrap.className = "star-wrap";
+      var starOutline = document.createElement("div");
+      starOutline.className = "star-outline star-shape";
+      var starFill = document.createElement("div");
+      starFill.className = "star-fill star-shape";
+      starWrap.appendChild(starOutline);
+      starWrap.appendChild(starFill);
+      back.style.display = "flex";
+      back.style.alignItems = "center";
+      back.style.justifyContent = "center";
+      back.appendChild(starWrap);
+
+      var front = document.createElement("div");
+      front.className = "card-face card-front";
+      front.textContent = item.icon;
+
+      inner.appendChild(back);
+      inner.appendChild(front);
+      btn.appendChild(inner);
+      btn.addEventListener("click", function () { onCardClick(index, btn); });
+      board.appendChild(btn);
+    });
+
+    statMoves.textContent = "0";
+    statTime.textContent = "0:00";
+    statPairs.textContent = "0/" + cfg.pairs;
+  }
+
+  function onCardClick(index, el) {
+    unlockAudio();
+    if (el.classList.contains("matched")) return;
+
+    if (state.flipped.length === 2) {
+      if (state.mismatchTimer) {
+        // A wrong pair is mid-flip-back. Resolve it immediately instead of
+        // swallowing this click -- otherwise a genuine match made a beat too
+        // soon after a miss looks like it silently did nothing.
+        clearTimeout(state.mismatchTimer);
+        state.mismatchTimer = null;
+        resetMismatchedPair();
+      } else {
+        // A confirmed match is being celebrated for a moment; ignore clicks
+        // until it settles (this window is short, ~350ms).
+        return;
+      }
+    }
+
+    if (el.classList.contains("flipped")) return;
+
+    if (!state.started) {
+      state.started = true;
+      startTimer();
+    }
+
+    el.classList.add("flipped");
+    el.setAttribute("aria-label", "Card showing " + state.cards[index].icon);
+    state.flipped.push({ index: index, el: el });
+
+    if (state.flipped.length === 2) {
+      state.moves++;
+      statMoves.textContent = state.moves;
+      checkMatch();
+    }
+  }
+
+  function checkMatch() {
+    var a = state.flipped[0], b = state.flipped[1];
+    var same = state.cards[a.index].icon === state.cards[b.index].icon;
+
+    if (same) {
+      state.resolvingMatch = true;
+      setTimeout(function () {
+        a.el.classList.add("matched");
+        b.el.classList.add("matched");
+        a.el.setAttribute("aria-label", "Matched card: " + state.cards[a.index].icon);
+        b.el.setAttribute("aria-label", "Matched card: " + state.cards[b.index].icon);
+        state.matched++;
+        var cfg = SIZES[currentSize];
+        statPairs.textContent = state.matched + "/" + cfg.pairs;
+        liveRegion.textContent = "Match found, " + state.matched + " of " + cfg.pairs + " pairs.";
+        state.flipped = [];
+        state.resolvingMatch = false;
+        playApplause(state.matched === cfg.pairs);
+        if (state.matched === cfg.pairs) {
+          finishGame();
+        }
+      }, 350);
+    } else {
+      state.mismatchTimer = setTimeout(function () {
+        resetMismatchedPair();
+        state.mismatchTimer = null;
+      }, 800);
+    }
+  }
+
+  function clearConfetti() {
+    var pieces = overlay.querySelectorAll(".confetti-piece");
+    pieces.forEach(function (p) { p.remove(); });
+  }
+
+  function launchConfetti() {
+    if (reduceMotion) return;
+    clearConfetti();
+    var count = 22;
+    for (var i = 0; i < count; i++) {
+      var piece = document.createElement("div");
+      piece.className = "confetti-piece";
+      var isStar = i % 3 === 0;
+      if (isStar) piece.classList.add("star-shape");
+      else piece.style.borderRadius = "2px";
+      piece.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+      piece.style.left = (Math.random() * 100) + "%";
+      var duration = 2.2 + Math.random() * 1.4;
+      piece.style.animationDuration = duration + "s";
+      piece.style.animationDelay = (Math.random() * 0.4) + "s";
+      piece.style.setProperty("--spin", (Math.random() > 0.5 ? 1 : -1) * (240 + Math.random() * 240) + "deg");
+      overlay.appendChild(piece);
+    }
+  }
+
+  function finishGame() {
+    stopTimer();
+    finalMoves.textContent = state.moves;
+    finalTime.textContent = formatTime(state.seconds);
+    setTimeout(function () {
+      overlay.classList.add("show");
+      launchConfetti();
+    }, 400);
+  }
+
+  difficultyBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      difficultyBtns.forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      buildBoard(btn.getAttribute("data-size"));
+    });
+  });
+
+  document.getElementById("newGameBtn").addEventListener("click", function () {
+    buildBoard(currentSize);
+  });
+  document.getElementById("playAgainBtn").addEventListener("click", function () {
+    buildBoard(currentSize);
+  });
+
+  buildBoard(currentSize);
+})();
+</script>
