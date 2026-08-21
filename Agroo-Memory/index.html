@@ -82,6 +82,7 @@
     background: var(--bg);
     display: flex;
     justify-content: center;
+    align-items: flex-start;
     padding: clamp(12px, 3vw, 32px);
   }
 
@@ -308,7 +309,7 @@
     background: var(--surface);
     border: 1px solid var(--surface-line);
     transform: rotateY(180deg);
-    font-size: clamp(1.6rem, 8vw, 2.6rem);
+    font-size: calc(var(--card-w, 76px) * 0.42);
   }
   .card.matched .card-front {
     background: color-mix(in srgb, var(--green) 16%, var(--surface));
@@ -590,6 +591,67 @@
     }, 1000);
   }
 
+  /* ---- Board sizing: fit cards to whichever dimension is tighter ----
+     grid-template-columns alone (driven by vw) only reacts to width, so on
+     short/landscape viewports the board overflows past the fold instead of
+     shrinking. This also accounts for available height. */
+  var STAGE_MAX_WIDTH = 640;
+  var CARD_MIN = 44;
+  var CARD_MAX = 160;
+
+  function computeGap() {
+    var boardStyles = getComputedStyle(board);
+    var gap = parseFloat(boardStyles.rowGap || boardStyles.gap);
+    return isNaN(gap) ? 0 : gap;
+  }
+
+  function reservedVerticalSpace() {
+    var stage = document.querySelector(".stage");
+    var stageStyles = getComputedStyle(stage);
+    var stageGap = parseFloat(stageStyles.rowGap || stageStyles.gap) || 0;
+    var total = 0;
+    Array.prototype.forEach.call(stage.children, function (el) {
+      if (el !== board) total += el.getBoundingClientRect().height;
+    });
+    total += stageGap * (stage.children.length - 1);
+    var bodyStyles = getComputedStyle(document.body);
+    total += parseFloat(bodyStyles.paddingTop) + parseFloat(bodyStyles.paddingBottom);
+    return total;
+  }
+
+  function sizeBoard() {
+    var cfg = SIZES[currentSize];
+    var cols = cfg.cols;
+    var rows = Math.ceil((cfg.pairs * 2) / cols);
+    var gap = computeGap();
+
+    var bodyStyles = getComputedStyle(document.body);
+    var horizontalPad = parseFloat(bodyStyles.paddingLeft) + parseFloat(bodyStyles.paddingRight);
+    var availWidth = Math.min(STAGE_MAX_WIDTH, window.innerWidth - horizontalPad);
+    var availHeight = window.innerHeight - reservedVerticalSpace();
+
+    var widthPerCol = (availWidth - gap * (cols - 1)) / cols;
+    var widthFromHeight = ((availHeight - gap * (rows - 1)) / rows) * (3 / 4);
+
+    var size = Math.max(CARD_MIN, Math.min(CARD_MAX, widthPerCol, widthFromHeight));
+    board.style.gridTemplateColumns = "repeat(" + cols + ", " + size + "px)";
+    document.documentElement.style.setProperty("--card-w", size + "px");
+  }
+
+  var resizeRaf = null;
+  function scheduleResize() {
+    if (resizeRaf) return;
+    resizeRaf = requestAnimationFrame(function () {
+      resizeRaf = null;
+      sizeBoard();
+    });
+  }
+  window.addEventListener("resize", scheduleResize);
+  window.addEventListener("orientationchange", scheduleResize);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(scheduleResize);
+  }
+
   function buildBoard(sizeKey) {
     stopTimer();
     currentSize = sizeKey;
@@ -652,6 +714,7 @@
     statMoves.textContent = "0";
     statTime.textContent = "0:00";
     statPairs.textContent = "0/" + cfg.pairs;
+    sizeBoard();
   }
 
   function onCardClick(index, el) {
