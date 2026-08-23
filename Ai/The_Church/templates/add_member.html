@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Add Member - Church Security Album{% endblock %}
+
+{% block body %}
+<div class="form-page">
+  <div class="form-box">
+    <h1>Add New Member</h1>
+
+    {% if error %}
+    <div class="error-box">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+      <label>Full Name <span class="required">*</span></label>
+      <input type="text" name="full_name" required>
+
+      <label>Member ID <span class="required">*</span> (e.g. CH-001)</label>
+      <input type="text" name="member_id" required>
+
+      <label>Group</label>
+      <select name="group">
+        <option value="Men">Men</option>
+        <option value="Women">Women</option>
+        <option value="Youth">Youth</option>
+        <option value="Children">Children</option>
+      </select>
+
+      <label>Phone Number</label>
+      <input type="tel" name="phone" placeholder="e.g. 0700 123 456">
+
+      <label>Photo <span class="required">*</span></label>
+      <input type="file" name="photo" id="photoInput" accept="image/*" capture="environment" required>
+      <img id="photoPreview" class="photo-preview" alt="Selected photo preview">
+
+      <div class="btn-row">
+        <a class="btn-cancel" href="{{ url_for('index') }}">Cancel</a>
+        <button class="btn-save" type="submit">Save Member</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Church Security Album{% endblock %}
+
+{% block body %}
+<div class="topbar">
+  <h1>⛪ Church Security Album</h1>
+  <input type="text" id="searchInput" placeholder="Search by name or ID..." oninput="filterMembers()">
+  <select id="groupFilter" onchange="filterMembers()">
+    <option value="">All Groups</option>
+    <option value="Men">Men</option>
+    <option value="Women">Women</option>
+    <option value="Youth">Youth</option>
+    <option value="Children">Children</option>
+  </select>
+  <a class="btn-add topbar-add" href="{{ url_for('add_member') }}">+ Add Member</a>
+  <div class="count-badge">Total: <span id="totalCount">{{ total }}</span></div>
+  <a class="btn-logout" href="{{ url_for('logout') }}" title="Log out">Log out</a>
+</div>
+
+<div class="grid" id="memberGrid">
+  {% for m in members %}
+  <div class="card"
+       data-name="{{ m.full_name|lower }}"
+       data-id="{{ m.member_id|lower }}"
+       data-group="{{ m.group }}"
+       onclick="showDetails('{{ m.full_name|e }}', '{{ m.member_id|e }}', '{{ m.group|e }}', '{{ m.phone|e }}', '{{ url_for('member_photo', filename=m.photo)|e }}')">
+    <img src="{{ url_for('member_photo', filename=m.photo) }}" alt="{{ m.full_name }}" loading="lazy">
+    <div class="card-info">
+      <div class="name">{{ m.full_name }}</div>
+      <div class="meta">{{ m.member_id }} &middot; {{ m.group }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="no-results" id="noResults">No members match your search.</div>
+
+<a class="fab-add" href="{{ url_for('add_member') }}" aria-label="Add member">+</a>
+
+<!-- Detail Modal -->
+<div id="detailModal" onclick="if(event.target===this) closeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+    <img class="modal-photo" id="modalPhoto" src="" alt="Member photo">
+    <div class="modal-name" id="modalName"></div>
+    <div class="modal-idbadge" id="modalId"></div>
+    <div class="modal-row"><span class="label">Group</span><span class="value" id="modalGroup"></span></div>
+    <div class="modal-row"><span class="label">Phone</span><span class="value" id="modalPhone"></span></div>
+    <div class="modal-verified">✔ Verified Member</div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Sign In - Church Security Album{% endblock %}
+
+{% block body %}
+<div class="form-page">
+  <div class="form-box">
+    <h1>⛪ Church Security Album</h1>
+
+    {% if error %}
+    <div class="error-box">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <input type="hidden" name="next" value="{{ next }}">
+      <label>Password</label>
+      <input type="password" name="password" autofocus required>
+
+      <div class="btn-row">
+        <button class="btn-save" type="submit" style="flex:1;">Sign In</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
