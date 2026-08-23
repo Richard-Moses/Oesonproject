@@ -22,10 +22,17 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
+from PIL import Image, ImageOps
+import pillow_heif
+
+# Lets Pillow read iPhone HEIC/HEIF photos, not just JPEG/PNG — otherwise
+# a photo picked from an iPhone's gallery (as opposed to captured fresh
+# through the browser, which iOS re-encodes as JPEG) fails to open.
+pillow_heif.register_heif_opener()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 PHOTO_FOLDER = os.path.join(BASE_DIR, "uploads", "photos")
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+MAX_PHOTO_DIMENSION = 1600  # px on the longest side — plenty for a 140px circular thumbnail
 
 APP_PASSWORD = os.environ.get("CHURCH_APP_PASSWORD", "changeme123")
 
@@ -36,6 +43,7 @@ app.config["UPLOAD_FOLDER"] = PHOTO_FOLDER
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-only-change-this-secret-key")
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20MB — generous for a phone camera photo
 
 db = SQLAlchemy(app)
 
@@ -52,8 +60,34 @@ class Member(db.Model):
     photo = db.Column(db.String(200), nullable=False)
 
 
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+def save_member_photo(photo_file, member_id):
+    """Reads an uploaded photo — from a phone camera, a gallery, or a
+    desktop file picker, in any common format including iPhone HEIC —
+    corrects camera rotation, downsizes it, and saves it as a JPEG named
+    after the member ID. Saving as JPEG (rather than trusting whatever
+    format was uploaded) means every browser can display it, not just
+    Safari. Returns the saved filename, or None if the upload wasn't a
+    readable image.
+    """
+    try:
+        img = Image.open(photo_file.stream)
+        img = ImageOps.exif_transpose(img)
+    except Exception:
+        return None
+
+    if img.mode in ("RGBA", "LA", "P"):
+        img = img.convert("RGBA")
+        background = Image.new("RGB", img.size, (255, 255, 255))
+        background.paste(img, mask=img.split()[-1])
+        img = background
+    else:
+        img = img.convert("RGB")
+
+    img.thumbnail((MAX_PHOTO_DIMENSION, MAX_PHOTO_DIMENSION), Image.LANCZOS)
+
+    filename = secure_filename(member_id) + ".jpg"
+    img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename), "JPEG", quality=88)
+    return filename
 
 
 # Runs on import (not just "python app.py"), so the photo folder and
@@ -137,26 +171,90 @@ def add_member():
             error = "Full name and Member ID are required."
         elif not photo_file or photo_file.filename == "":
             error = "A photo is required."
-        elif not allowed_file(photo_file.filename):
-            error = "Photo must be an image file (png, jpg, jpeg, gif, webp)."
         elif Member.query.filter_by(member_id=member_id).first():
             error = f"Member ID '{member_id}' is already in use."
         else:
-            filename = secure_filename(f"{member_id}_{photo_file.filename}")
-            photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+            filename = save_member_photo(photo_file, member_id)
+            if filename is None:
+                error = "That file doesn't look like a valid photo. Please choose a different image."
+            else:
+                new_member = Member(
+                    full_name=full_name,
+                    member_id=member_id,
+                    group=group,
+                    phone=phone,
+                    photo=filename,
+                )
+                db.session.add(new_member)
+                db.session.commit()
+                return redirect(url_for("index"))
 
-            new_member = Member(
-                full_name=full_name,
-                member_id=member_id,
-                group=group,
-                phone=phone,
-                photo=filename,
-            )
-            db.session.add(new_member)
-            db.session.commit()
-            return redirect(url_for("index"))
+    return render_template("add_member.html", error=error, member=None)
 
-    return render_template("add_member.html", error=error)
+
+@app.route("/edit/<int:pk>", methods=["GET", "POST"])
+@login_required
+def edit_member(pk):
+    member = Member.query.get_or_404(pk)
+    error = None
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        member_id = request.form.get("member_id", "").strip()
+        group = request.form.get("group", "Men")
+        phone = request.form.get("phone", "").strip()
+        photo_file = request.files.get("photo")
+        replacing_photo = bool(photo_file and photo_file.filename)
+
+        duplicate = Member.query.filter(
+            Member.member_id == member_id, Member.id != member.id
+        ).first()
+
+        if not full_name or not member_id:
+            error = "Full name and Member ID are required."
+        elif duplicate:
+            error = f"Member ID '{member_id}' is already in use."
+        else:
+            new_filename = None
+            if replacing_photo:
+                new_filename = save_member_photo(photo_file, member_id)
+                if new_filename is None:
+                    error = "That file doesn't look like a valid photo. Please choose a different image."
+
+            if not error:
+                old_photo = member.photo
+                member.full_name = full_name
+                member.member_id = member_id
+                member.group = group
+                member.phone = phone
+
+                if new_filename:
+                    member.photo = new_filename
+                    if new_filename != old_photo:
+                        try:
+                            os.remove(os.path.join(app.config["UPLOAD_FOLDER"], old_photo))
+                        except OSError:
+                            pass  # old photo already missing — not fatal
+
+                db.session.commit()
+                return redirect(url_for("index"))
+
+    return render_template("add_member.html", error=error, member=member)
+
+
+@app.route("/delete/<int:pk>", methods=["POST"])
+@login_required
+def delete_member(pk):
+    member = Member.query.get_or_404(pk)
+
+    try:
+        os.remove(os.path.join(app.config["UPLOAD_FOLDER"], member.photo))
+    except OSError:
+        pass  # photo file already missing — not fatal, still remove the record
+
+    db.session.delete(member)
+    db.session.commit()
+    return redirect(url_for("index"))
 
 
 # ---------------------------------------------------------------------

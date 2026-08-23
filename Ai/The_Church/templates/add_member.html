@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Add Member - Church Security Album{% endblock %}
+{% block title %}{{ 'Edit Member' if member else 'Add Member' }} - Church Security Album{% endblock %}
 
 {% block body %}
 <div class="form-page">
   <div class="form-box">
-    <h1>Add New Member</h1>
+    <h1>{{ 'Edit Member' if member else 'Add New Member' }}</h1>
 
     {% if error %}
     <div class="error-box">{{ error }}</div>
@@ -12,31 +12,42 @@
 
     <form method="POST" enctype="multipart/form-data">
       <label>Full Name <span class="required">*</span></label>
-      <input type="text" name="full_name" required>
+      <input type="text" name="full_name" value="{{ member.full_name if member else '' }}" required>
 
       <label>Member ID <span class="required">*</span> (e.g. CH-001)</label>
-      <input type="text" name="member_id" required>
+      <input type="text" name="member_id" value="{{ member.member_id if member else '' }}" required>
 
       <label>Group</label>
       <select name="group">
-        <option value="Men">Men</option>
-        <option value="Women">Women</option>
-        <option value="Youth">Youth</option>
-        <option value="Children">Children</option>
+        {% for g in ['Men', 'Women', 'Youth', 'Children'] %}
+        <option value="{{ g }}" {% if member and member.group == g %}selected{% endif %}>{{ g }}</option>
+        {% endfor %}
       </select>
 
       <label>Phone Number</label>
-      <input type="tel" name="phone" placeholder="e.g. 0700 123 456">
+      <input type="tel" name="phone" value="{{ member.phone if member else '' }}" placeholder="e.g. 0700 123 456">
 
-      <label>Photo <span class="required">*</span></label>
-      <input type="file" name="photo" id="photoInput" accept="image/*" capture="environment" required>
+      <label>Photo {% if not member %}<span class="required">*</span>{% endif %}</label>
+      <input type="file" name="photo" id="photoInput" accept="image/*" capture="environment" {{ 'required' if not member else '' }}>
+      {% if member %}
+      <img id="photoPreview" class="photo-preview" style="display:block" src="{{ url_for('member_photo', filename=member.photo) }}" alt="Current photo">
+      <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 0;">Leave blank to keep the current photo.</p>
+      {% else %}
       <img id="photoPreview" class="photo-preview" alt="Selected photo preview">
+      {% endif %}
 
       <div class="btn-row">
         <a class="btn-cancel" href="{{ url_for('index') }}">Cancel</a>
-        <button class="btn-save" type="submit">Save Member</button>
+        <button class="btn-save" type="submit">{{ 'Save Changes' if member else 'Save Member' }}</button>
       </div>
     </form>
+
+    {% if member %}
+    <form method="POST" action="{{ url_for('delete_member', pk=member.id) }}"
+          onsubmit="return confirm('Delete {{ member.full_name|e }}? This cannot be undone.');">
+      <button class="btn-delete" type="submit">Delete Member</button>
+    </form>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

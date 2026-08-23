@@ -2,20 +2,37 @@
 {% block title %}Church Security Album{% endblock %}
 
 {% block body %}
-<div class="topbar">
-  <h1>⛪ Church Security Album</h1>
-  <input type="text" id="searchInput" placeholder="Search by name or ID..." oninput="filterMembers()">
-  <select id="groupFilter" onchange="filterMembers()">
-    <option value="">All Groups</option>
-    <option value="Men">Men</option>
-    <option value="Women">Women</option>
-    <option value="Youth">Youth</option>
-    <option value="Children">Children</option>
-  </select>
-  <a class="btn-add topbar-add" href="{{ url_for('add_member') }}">+ Add Member</a>
-  <div class="count-badge">Total: <span id="totalCount">{{ total }}</span></div>
-  <a class="btn-logout" href="{{ url_for('logout') }}" title="Log out">Log out</a>
-</div>
+<header class="page-header">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-icon">⛪</span>
+      <div>
+        <h1>Church Security Album</h1>
+        <p class="brand-sub"><strong id="totalCount">{{ total }}</strong> members enrolled</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a class="btn-add topbar-add" href="{{ url_for('add_member') }}">+ Add Member</a>
+      <a class="btn-logout" href="{{ url_for('logout') }}" title="Log out" aria-label="Log out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search by name or ID..." oninput="filterMembers()">
+    </div>
+    <div class="filter-chips" id="groupFilter">
+      <button type="button" class="chip active" data-group="">All</button>
+      <button type="button" class="chip" data-group="Men">Men</button>
+      <button type="button" class="chip" data-group="Women">Women</button>
+      <button type="button" class="chip" data-group="Youth">Youth</button>
+      <button type="button" class="chip" data-group="Children">Children</button>
+    </div>
+  </div>
+</header>
 
 <div class="grid" id="memberGrid">
   {% for m in members %}
@@ -23,17 +40,24 @@
        data-name="{{ m.full_name|lower }}"
        data-id="{{ m.member_id|lower }}"
        data-group="{{ m.group }}"
-       onclick="showDetails('{{ m.full_name|e }}', '{{ m.member_id|e }}', '{{ m.group|e }}', '{{ m.phone|e }}', '{{ url_for('member_photo', filename=m.photo)|e }}')">
-    <img src="{{ url_for('member_photo', filename=m.photo) }}" alt="{{ m.full_name }}" loading="lazy">
+       style="animation-delay: {{ (loop.index0 % 12) * 0.03 }}s"
+       onclick="showDetails('{{ m.full_name|e }}', '{{ m.member_id|e }}', '{{ m.group|e }}', '{{ m.phone|e }}', '{{ url_for('member_photo', filename=m.photo)|e }}', {{ m.id }})">
+    <div class="card-photo">
+      <img src="{{ url_for('member_photo', filename=m.photo) }}" alt="{{ m.full_name }}" loading="lazy">
+      <span class="group-chip group-{{ m.group|lower }}">{{ m.group }}</span>
+    </div>
     <div class="card-info">
       <div class="name">{{ m.full_name }}</div>
-      <div class="meta">{{ m.member_id }} &middot; {{ m.group }}</div>
+      <div class="meta">{{ m.member_id }}</div>
     </div>
   </div>
   {% endfor %}
 </div>
 
-<div class="no-results" id="noResults">No members match your search.</div>
+<div class="no-results" id="noResults">
+  <div class="no-results-icon">🔍</div>
+  No members match your search.
+</div>
 
 <a class="fab-add" href="{{ url_for('add_member') }}" aria-label="Add member">+</a>
 
@@ -47,6 +71,13 @@
     <div class="modal-row"><span class="label">Group</span><span class="value" id="modalGroup"></span></div>
     <div class="modal-row"><span class="label">Phone</span><span class="value" id="modalPhone"></span></div>
     <div class="modal-verified">✔ Verified Member</div>
+
+    <div class="modal-actions">
+      <a id="modalEditLink" class="btn-edit" href="#">Edit</a>
+      <form id="modalDeleteForm" method="POST" action="#" onsubmit="return confirm('Delete this member? This cannot be undone.');">
+        <button type="submit" class="btn-delete-inline">Delete</button>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}

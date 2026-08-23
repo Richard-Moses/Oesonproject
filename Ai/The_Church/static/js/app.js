@@ -1,11 +1,13 @@
 // Church Security Album — shared client-side behavior
 
-function showDetails(name, id, group, phone, photo) {
+function showDetails(name, id, group, phone, photo, pk) {
   document.getElementById("modalPhoto").src = photo;
   document.getElementById("modalName").textContent = name;
   document.getElementById("modalId").textContent = id;
   document.getElementById("modalGroup").textContent = group;
   document.getElementById("modalPhone").textContent = phone || "N/A";
+  document.getElementById("modalEditLink").href = "/edit/" + pk;
+  document.getElementById("modalDeleteForm").action = "/delete/" + pk;
   document.getElementById("detailModal").classList.add("show");
   document.body.style.overflow = "hidden";
 }
@@ -20,8 +22,10 @@ document.addEventListener("keydown", (e) => {
 });
 
 function filterMembers() {
-  const query = document.getElementById("searchInput").value.trim().toLowerCase();
-  const group = document.getElementById("groupFilter").value;
+  const searchInput = document.getElementById("searchInput");
+  const activeChip = document.querySelector("#groupFilter .chip.active");
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+  const group = activeChip ? activeChip.getAttribute("data-group") : "";
   const cards = document.querySelectorAll("#memberGrid .card");
   let visibleCount = 0;
 
@@ -47,6 +51,21 @@ function filterMembers() {
   const noResultsEl = document.getElementById("noResults");
   if (noResultsEl) noResultsEl.style.display = visibleCount === 0 ? "block" : "none";
 }
+
+// Group filter chips (All / Men / Women / Youth / Children) — clicking one
+// marks it active and re-runs the filter, same as the search box does.
+function initFilterChips() {
+  const chips = document.querySelectorAll("#groupFilter .chip");
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      filterMembers();
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initFilterChips);
 
 // Live preview of the chosen photo on the Add Member form, so staff can
 // confirm the right picture was picked before saving.
