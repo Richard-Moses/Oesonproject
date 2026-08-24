@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 *.log
-church_security_album.zip
+*.zip
 church.db
 uploads/photos/*
 !uploads/photos/.gitkeep

@@ -1,6 +1,25 @@
 // Church Security Album — shared client-side behavior
 
-function showDetails(name, id, group, phone, photo, pk) {
+// Tracks which member is currently shown in the modal, among the
+// currently-visible (filtered) cards, so Prev/Next and the arrow keys
+// know where to go next.
+let visibleCards = [];
+let currentCardIndex = -1;
+
+function getVisibleCards() {
+  return Array.from(document.querySelectorAll("#memberGrid .card")).filter(
+    (c) => c.style.display !== "none"
+  );
+}
+
+function showDetails(card) {
+  const name = card.dataset.fullName;
+  const id = card.dataset.memberId;
+  const group = card.dataset.group;
+  const phone = card.dataset.phone;
+  const photo = card.dataset.photo;
+  const pk = card.dataset.pk;
+
   document.getElementById("modalPhoto").src = photo;
   document.getElementById("modalName").textContent = name;
   document.getElementById("modalId").textContent = id;
@@ -8,8 +27,29 @@ function showDetails(name, id, group, phone, photo, pk) {
   document.getElementById("modalPhone").textContent = phone || "N/A";
   document.getElementById("modalEditLink").href = "/edit/" + pk;
   document.getElementById("modalDeleteForm").action = "/delete/" + pk;
+
+  visibleCards = getVisibleCards();
+  currentCardIndex = visibleCards.indexOf(card);
+  updateNavButtons();
+
   document.getElementById("detailModal").classList.add("show");
   document.body.style.overflow = "hidden";
+}
+
+// Moves the modal to the next (step=1) or previous (step=-1) member among
+// the currently visible cards, wrapping around at each end.
+function showRelative(step) {
+  if (visibleCards.length === 0) return;
+  currentCardIndex = (currentCardIndex + step + visibleCards.length) % visibleCards.length;
+  showDetails(visibleCards[currentCardIndex]);
+}
+
+function updateNavButtons() {
+  const show = visibleCards.length > 1 ? "flex" : "none";
+  const prevBtn = document.getElementById("modalPrev");
+  const nextBtn = document.getElementById("modalNext");
+  if (prevBtn) prevBtn.style.display = show;
+  if (nextBtn) nextBtn.style.display = show;
 }
 
 function closeModal() {
@@ -18,7 +58,10 @@ function closeModal() {
 }
 
 document.addEventListener("keydown", (e) => {
+  if (!document.getElementById("detailModal").classList.contains("show")) return;
   if (e.key === "Escape") closeModal();
+  if (e.key === "ArrowRight") showRelative(1);
+  if (e.key === "ArrowLeft") showRelative(-1);
 });
 
 function filterMembers() {

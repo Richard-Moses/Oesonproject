@@ -40,8 +40,13 @@
        data-name="{{ m.full_name|lower }}"
        data-id="{{ m.member_id|lower }}"
        data-group="{{ m.group }}"
+       data-full-name="{{ m.full_name|e }}"
+       data-member-id="{{ m.member_id|e }}"
+       data-phone="{{ m.phone|e }}"
+       data-photo="{{ url_for('member_photo', filename=m.photo)|e }}"
+       data-pk="{{ m.id }}"
        style="animation-delay: {{ (loop.index0 % 12) * 0.03 }}s"
-       onclick="showDetails('{{ m.full_name|e }}', '{{ m.member_id|e }}', '{{ m.group|e }}', '{{ m.phone|e }}', '{{ url_for('member_photo', filename=m.photo)|e }}', {{ m.id }})">
+       onclick="showDetails(this)">
     <div class="card-photo">
       <img src="{{ url_for('member_photo', filename=m.photo) }}" alt="{{ m.full_name }}" loading="lazy">
       <span class="group-chip group-{{ m.group|lower }}">{{ m.group }}</span>
@@ -65,7 +70,11 @@
 <div id="detailModal" onclick="if(event.target===this) closeModal()">
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
-    <img class="modal-photo" id="modalPhoto" src="" alt="Member photo">
+    <div class="modal-photo-row">
+      <button class="modal-nav-btn" id="modalPrev" onclick="showRelative(-1)" aria-label="Previous member">‹</button>
+      <img class="modal-photo" id="modalPhoto" src="" alt="Member photo">
+      <button class="modal-nav-btn" id="modalNext" onclick="showRelative(1)" aria-label="Next member">›</button>
+    </div>
     <div class="modal-name" id="modalName"></div>
     <div class="modal-idbadge" id="modalId"></div>
     <div class="modal-row"><span class="label">Group</span><span class="value" id="modalGroup"></span></div>

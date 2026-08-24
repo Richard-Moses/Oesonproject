@@ -409,17 +409,40 @@ a { color: inherit; }
 }
 .modal-close:hover { color: var(--text); }
 
+.modal-photo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 6px 0 14px;
+}
 .modal-photo {
   width: 140px;
   height: 140px;
   border-radius: 50%;
   object-fit: cover;
   border: 4px solid var(--green);
-  margin: 6px auto 14px;
   display: block;
   background: var(--border);
   box-shadow: var(--shadow-md);
 }
+.modal-nav-btn {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-nav-btn:hover { color: var(--green); border-color: var(--green); }
+.modal-nav-btn:active { transform: scale(0.9); }
 .modal-name { font-size: 1.3rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.01em; }
 .modal-idbadge {
   display: inline-block;
